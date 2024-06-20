@@ -1,0 +1,1 @@
+source .env && forge script --target-contract V3EXDeploy --rpc-url ${RPC_URL} --broadcast -vvvv script/V3EX.s.sol

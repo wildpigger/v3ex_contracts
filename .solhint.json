@@ -1,0 +1,20 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "code-complexity": ["warn", 7],
+    "function-max-lines": ["warn", 50],
+    "max-line-length": ["warn", 150],
+    "func-param-name-mixedcase": "warn",
+    "modifier-name-mixedcase": "warn",
+    "ordering": "warn",
+    "compiler-version": ["error", "^0.8.20"],
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "immutable-vars-naming": "off",
+    "one-contract-per-file": "off",
+    "no-console": "off",
+    "func-name-mixedcase": "off",
+    "private-vars-leading-underscore": "off",
+    "no-empty-blocks": "off",
+    "var-name-mixedcase": "off"
+  }
+}

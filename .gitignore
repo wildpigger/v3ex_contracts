@@ -1,3 +1,6 @@
+# DS_Store
+**/.DS_Store
+
 # Compiler files
 cache/
 out/
@@ -12,3 +15,6 @@ docs/
 
 # Dotenv file
 .env
+
+# idea
+.idea
