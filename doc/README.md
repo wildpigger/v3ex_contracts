@@ -1,4 +1,6 @@
 # V3EX 合约集成文档
+## demo
+地址: https://wildpigger.github.io/v3ex_contracts/index.html
 
 ## linea sepolia rpc
 | 字段| 值|
@@ -13,8 +15,8 @@
 
 | 合约        | 地址 |
 | ----------- | ---- |
-| V3EXToken   |   0x2D7b5fEcaD248Eca3Bea9fc8Aa07f8b07505EE3a   |
-| V3EXCheckIn |   0xCb0f9Aa865004E71BC62aA72cB267811aE99f8a3   |
+| V3EXToken   |   0xE29FA1eda90338064A1C181fD9821734922B268e   |
+| V3EXCheckIn |   0xB25aF23E325cB921E21776e5f87FFed8E4133053   |
 
 ## 合约接口文档
 [IV3EXToken接口文档](./IV3EXToken接口文档.md)

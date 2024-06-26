@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V3EX 签到和打赏Demo</title>
+    <link rel="icon" type="image/png" sizes="64x64" href="https://cdn-icons-png.flaticon.com/128/5024/5024833.png">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css' rel='stylesheet' />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js" integrity="sha384-+sLIOodYLS7CIrQpBjl+C7nPvqq+FbNUBDunl/OZv93DB7Ln/533i8e/mZXLi/P+" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
+
+    <style>
+        .toast-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1050; /* 大于 modal 的 z-index */
+        }
+        /* 设置每个toast的最小高度和宽度 */
+        .toast {
+          min-width: 250px;
+          min-height: 100px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">V3EX 签到和打赏</h1>
+
+    <!-- 连接钱包按钮 -->
+    <div class="text-center">
+        <button id="connectWallet" class="btn btn-primary mb-3">连接钱包</button>
+        <div id="network"></div>
+    </div>
+
+    <!-- 代币选择 -->
+    <div class="form-group">
+        <label for="tokenSelect">选择代币</label>
+        <select class="form-control" id="tokenSelect" onchange="updateBalance()">
+            <option value="ETH">ETH</option>
+            <option value="V3EXToken">V3EXToken</option>
+        </select>
+    </div>
+
+    <!-- 用户信息展示表格 -->
+    <div class="mt-5">
+        <h2>代币余额信息</h2>
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th>用户钱包地址</th>
+                <th>V3EXCheckIn合约地址</th>
+                <th>被打赏人地址</th>
+            </tr>
+            </thead>
+            <tbody id="userInfo">
+            <tr>
+                <td id="userWalletAddress">0x0000000000000000000000000000000000000000</td>
+                <td id="contractAddress">0xB25aF23E325cB921E21776e5f87FFed8E4133053</td>
+                <td>
+                    <input type="text" class="form-control" id="tipAddress" placeholder="Enter the address" value="0x3a5a263f1a7c0b09d886cd431818f4a03c6564b4" >
+                </td>
+            </tr>
+            <tr>
+                <td id="userWalletAddressBalance">0</td>
+                <td id="contractAddressBalance">0</td>
+                <td id="tipAddressBalance">0</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+
+    <!-- 签到和打赏功能 -->
+    <div class="row">
+        <div class="col-md-6">
+            <h2>每日签到</h2>
+            <form id="checkInForm">
+                <div class="form-group">
+                    <label for="amount">奖励金额</label>
+                    <input type="number" class="form-control" id="amount" min="0" placeholder="Enter the amount" value="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="date">日期</label>
+                    <input type="date" class="form-control" id="date" required>
+                </div>
+                <button type="submit" class="btn btn-primary">签到</button>
+            </form>
+            <div id="checkInResult" class="mt-3"></div>
+            <div id="checkInCalendar" class="mt-3"></div>
+        </div>
+        <div class="col-md-6">
+            <h2>打赏</h2>
+            <form id="tipForm">
+                <div class="form-group">
+                    <label for="tipAmount">打赏金额</label>
+                    <input type="number" class="form-control" id="tipAmount" step=0.000001 min="0.000001" placeholder="Enter the amount" required>
+                </div>
+                <button id="tipButton" type="submit" class="btn btn-primary">打赏</button>
+            </form>
+            <div id="tipResult" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- 签到记录 -->
+    <div class="mt-5">
+        <h2>签到记录</h2>
+        <table id="checkInTable" class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>用户地址</th>
+                <th>签到日期</th>
+                <th>奖励金额</th>
+                <th>区块高度</th>
+                <th>交易哈希</th>
+            </tr>
+            </thead>
+            <tbody id="checkInRecords"></tbody>
+        </table>
+    </div>
+
+    <!-- 打赏记录 -->
+    <div class="mt-5">
+        <h2>打赏记录</h2>
+        <table id="tipTable" class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>打赏人</th>
+                <th>被打赏人</th>
+                <th>代币</th>
+                <th>金额</th>
+                <th>区块高度</th>
+                <th>交易哈希</th>
+            </tr>
+            </thead>
+            <tbody id="tipRecords"></tbody>
+        </table>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true">
+        <!-- 这里将动态添加 Toast 弹窗 -->
+    </div>
+</div>
+
+<script>
+    // checkIn验证者
+    const signerKey = '0x92db14e403b83dfe3df233f83dfa3a0d7096f21ca9b0d6d6b8d88b2b4ec1564e';
+
+    // V3EXCheckInAddress
+    const V3EXCheckInAddress = "0xB25aF23E325cB921E21776e5f87FFed8E4133053";
+    // V3EXTokenAddress
+    const V3EXTokenAddress = "0xE29FA1eda90338064A1C181fD9821734922B268e";
+
+    const ERC20Maps = {
+        "V3EXToken": "0xE29FA1eda90338064A1C181fD9821734922B268e",
+    }
+
+    const startBlock = 1949750;
+    let web3;
+
+    // 初始化表格
+    const checkInTable = $('#checkInTable').DataTable({
+        "order": [[ 3, "desc" ]] // 按照第四列（blockNumber）降序排序
+    });
+    const tipTable = $('#tipTable').DataTable({
+        "order": [[ 4, "desc" ]] // 按照第五列（blockNumber）降序排序
+    });
+    // 连接钱包功能
+    async function connectWallet() {
+        const provider = await detectEthereumProvider();
+        if (provider) {
+            console.log('Ethereum successfully detected!');
+            web3 = new Web3(provider);
+            // 获取连接账户信息
+            const accounts = await provider.request({ method: 'eth_requestAccounts' });
+            const walletAddress = accounts[0];
+            $('#userWalletAddress').text(walletAddress);
+
+            provider.on('accountsChanged',async (accounts) => {
+                if (accounts.length === 0) {
+                    // 刷新页面
+                    $('#connectWallet').prop('disabled', false);
+                    calendar.removeAllEvents();
+                    return;
+                }
+                const walletAddress = accounts[0];
+                $('#userWalletAddress').text(walletAddress);
+                calendar.removeAllEvents();
+                await updateBalance();
+                // 获取用户签到信息
+                await checkStates();
+            });
+
+            // 监听网络变化
+            provider.on('chainChanged', async () => {
+                calendar.removeAllEvents();
+                await connectWallet();
+            });
+
+            // 网络判断
+            const chainId = await web3.eth.getChainId();
+            if (chainId !== BigInt(59141)) {
+                web3 = null;
+                createToast("网络异常，目前只支持Linea Sepolia网络")
+                return
+            }
+            $('#network').text('Linea Sepolia');
+            $('#connectWallet').prop('disabled', true);
+
+
+            // 获取用户余额
+            await updateBalance();
+            // 获取用户签到信息
+            await checkStates();
+
+            // 订阅事件
+            const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, V3EXTokenAddress);
+            let decimals = await tokenContract.methods.decimals().call();
+            const checkInContract = new web3.eth.Contract(IV3EXCheckIn_ABI, V3EXCheckInAddress);
+            // 签到事件
+            checkInContract.events.UserCheckIn({
+                fromBlock: startBlock
+            }, (error, event) => {
+                if (error) {
+                    console.error('Error subscribing to event', error);
+                } else {
+                    console.log('Event received:', event);
+                    document.getElementById('event-log').innerText = `Event received: ${JSON.stringify(event)}`;
+                }
+            }).on('data', function(event){
+                console.log(event); // same results as the optional callback above
+                const values = event.returnValues;
+                // 更新签到记录表格
+                const to = values["user"].toString();
+                const date = values["date"].toString();
+                const amount = fromSmallestUnit(values["amount"].toString(), decimals);
+                const blockNumber = event["blockNumber"].toString();
+                const transactionHash = event["transactionHash"].toString();
+                // $('#checkInRecords').append(`
+                //     <tr>
+                //         <td>${to}</td>
+                //         <td>${date}</td>
+                //         <td>${amount}</td>
+                //         <td>${blockNumber}</td>
+                //     </tr>
+                // `);
+                const row = [
+                    to,
+                    date,
+                    amount,
+                    blockNumber,
+                    transactionHash,
+                ];
+                // 获取表格中的所有数据
+                let data = checkInTable.rows().data();
+                // 标记是否存在相同记录的标志
+                let recordExists = false;
+                data.each(function(rowData) {
+                    if (arraysAreEqual(rowData, row)) {
+                        recordExists = true;
+                        return false;
+                    }
+                })
+                if (!recordExists) {
+                    checkInTable.row.add(row).draw();
+                }
+            })
+            // 打赏记录
+            checkInContract.events.TipSent({
+                fromBlock: startBlock
+            }, (error, event) => {
+                if (error) {
+                    console.error('Error subscribing to event', error);
+                } else {
+                    console.log('Event received:', event);
+                    document.getElementById('event-log').innerText = `Event received: ${JSON.stringify(event)}`;
+                }
+            }).on('data', function(event){
+                console.log(event); // same results as the optional callback above
+                const values = event.returnValues;
+                const from = values["from"].toString();
+                const to = values["to"].toString();
+                let amount = values["amount"];
+                let token = "ETH";
+                const key = findKey(ERC20Maps, values["tokenAddress"]);
+                if (key.length > 0) {
+                    token = key[0];
+                }
+                const blockNumber = event["blockNumber"].toString();
+                const transactionHash = event["transactionHash"].toString();
+                if (token === "ETH") {
+                    amount = web3.utils.fromWei(amount, 'ether').toString();
+                } else if (token === "V3EXToken") {
+                    amount = fromSmallestUnit(amount.toString(), BigInt(18))
+                } else {
+                    return
+                }
+                // 更新打赏记录表格
+                // $('#tipRecords').append(`
+                //         <tr>
+                //             <td>${from}</td>
+                //             <td>${to}</td>
+                //             <td>${token}</td>
+                //             <td>${amount}</td>
+                //             <td>${blockNumber}</td>
+                //         </tr>
+                // `);
+                const row = [
+                    from,
+                    to,
+                    token,
+                    amount,
+                    blockNumber,
+                    transactionHash
+                ]
+                // 获取表格中的所有数据
+                let data = tipTable.rows().data();
+                // 标记是否存在相同记录的标志
+                let recordExists = false;
+                data.each(function(rowData) {
+                    if (arraysAreEqual(rowData, row)) {
+                        recordExists = true;
+                        return false;
+                    }
+                })
+                if (!recordExists) {
+                    tipTable.row.add(row).draw();
+                }
+            })
+        } else {
+            alert('请安装 MetaMask!');
+        }
+    }
+
+    // 通过map的value找key(ps:obj是js中的map对象 value就是map中的value）
+    function findKey (obj,value) {
+        // 匿名函数解决ie不兼容问题
+        var compare = (function(a,b){
+            return a === b;
+        });
+        // 匿名函数解决ie不兼容问题
+        return Object.keys(obj).filter(function(k){ // 用filter()方法替代find()方法还是解决ie不兼容问题
+            return compare(obj[k],value);
+        });
+    }
+
+
+    async function updateBalance() {
+        const token = $('#tokenSelect').val();
+        userWalletAddress = $('#userWalletAddress').text()
+        contractAddress = $('#contractAddress').text()
+        tipAddress = $('#tipAddress').val()
+        if (token === 'ETH') {
+            if (userWalletAddress) {
+                const balance = await web3.eth.getBalance(userWalletAddress);
+                $('#userWalletAddressBalance').text(web3.utils.fromWei(balance, 'ether'));
+            }
+
+            const balance = await web3.eth.getBalance(contractAddress);
+            $('#contractAddressBalance').text(web3.utils.fromWei(balance, 'ether'));
+
+            if (tipAddress) {
+                const balance = await web3.eth.getBalance(tipAddress);
+                $('#tipAddressBalance').text(web3.utils.fromWei(balance, 'ether'));
+            }
+        } else {
+            const tokenAddress = ERC20Maps[token];
+            const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, tokenAddress);
+            let decimals = await tokenContract.methods.decimals().call();
+            if (userWalletAddress) {
+                const balance = await tokenContract.methods.balanceOf(userWalletAddress).call();
+                $('#userWalletAddressBalance').text(fromSmallestUnit(balance.toString(), decimals));
+            }
+
+            const balance = await tokenContract.methods.balanceOf(contractAddress).call();
+            $('#contractAddressBalance').text(fromSmallestUnit(balance.toString(), decimals));
+
+            if (tipAddress) {
+                const balance = await tokenContract.methods.balanceOf(tipAddress).call();
+                $('#tipAddressBalance').text(fromSmallestUnit(balance.toString(), decimals));
+            }
+        }
+    }
+
+    async function checkStates() {
+        userWalletAddress = $('#userWalletAddress').text()
+        const dates = getDatesOfCurrentMonth();
+        const checkInContract = new web3.eth.Contract(IV3EXCheckIn_ABI, V3EXCheckInAddress);
+        const states = await checkInContract.methods.checkInStates(userWalletAddress, dates).call();
+        for (let i=0; i < dates.length; i++) {
+            if (states[i]) {
+                // 更新日历
+                calendar.addEvent({
+                    title: '已签到',
+                    start: dates[i],
+                    color: 'green'
+                });
+            }
+        }
+    }
+
+    function getDatesOfCurrentMonth() {
+        // 获取当前日期
+        const now = new Date();
+
+        // 获取当前月份和年份
+        const currentMonth = now.getMonth(); // 0-based index (0 = January, 11 = December)
+        const currentYear = now.getFullYear();
+
+        // 获取当前月份的第一天
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+
+        // 获取下个月的第一天，然后减去一天来得到当前月份的最后一天
+        const nextMonth = currentMonth + 1;
+        const firstDayOfNextMonth = new Date(currentYear, nextMonth, 1);
+        const lastDayOfMonth = new Date(firstDayOfNextMonth - 1);
+
+        // 获取当前月份的总天数
+        const totalDaysInMonth = lastDayOfMonth.getDate();
+
+        // 格式化日期为 YYYYmmdd
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        };
+        // 创建日期列表
+        const dates = [];
+        for (let i = 1; i <= totalDaysInMonth; i++) {
+            const date = new Date(currentYear, currentMonth, i);
+            dates.push(formatDate(date));
+        }
+        return dates;
+    }
+
+    $('#connectWallet').click(connectWallet);
+
+    $('#tokenSelect').change(async function () {
+        await updateBalance();
+    });
+
+    // 初始化日历组件
+    var calendarEl = document.getElementById('checkInCalendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: []
+    });
+    calendar.render();
+
+    // 签到功能
+    $('#checkInForm').submit(async function (event) {
+        event.preventDefault();
+        if (!web3) {
+            createToast("请连接钱包!")
+            return null
+        }
+        const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, V3EXTokenAddress);
+        let decimals = await tokenContract.methods.decimals().call();
+        const to = $('#userWalletAddress').text();
+        const amount = $('#amount').val();
+        const date = $('#date').val().replaceAll('-','');
+
+        const new_amount = BigInt(toSmallestUnit(amount.toString(), decimals));
+        // 获取链ID
+        const chainId = await web3.eth.getChainId();
+        const transId = web3.utils.soliditySha3(
+            { type: 'uint256', value: chainId },
+            { type: 'address', value: to },
+            { type: 'uint256', value: date }
+        ); // Example transId
+
+        const hash = web3.utils.soliditySha3(
+            { type: 'uint256', value: chainId },
+            { type: 'string', value: 'CHECKIN' },
+            { type: 'string', value: transId },
+            { type: 'uint256', value: new_amount },
+            { type: 'address', value: to }
+        );
+
+        const signatureBytes = web3.eth.accounts.sign(hash, signerKey);
+        const signature = "0x" + signatureBytes.r.substring(2) + signatureBytes.s.substring(2) + signatureBytes.v.substring(2);
+
+        console.log('transId:', transId);
+        console.log('hash:', hash);
+        console.log('signature:', signature);
+
+        const checkInContract = new web3.eth.Contract(IV3EXCheckIn_ABI, V3EXCheckInAddress);
+
+        try {
+            const tx = checkInContract.methods.checkIn(date, new_amount, transId, signature);
+            const gas = await tx.estimateGas({ from: to });
+
+            tx.send({
+                from: to,
+                gas
+            })
+            .on('transactionHash', function (hash) {
+                $('#checkInResult').text('签到中..' + hash);
+            })
+            .on('receipt', async (receipt) => {
+                console.log('Transaction receipt: ', receipt);
+                createToast('签到成功! 奖励V3EXToken代币:' + amount);
+                $('#checkInResult').text('');
+                // 更新日历
+                calendar.addEvent({
+                    title: '已签到',
+                    start: date,
+                    color: 'green'
+                });
+
+                // 更新余额
+                await updateBalance();
+            })
+            .on('confirmation', (confirmationNumber, receipt) => {
+                console.log('Confirmation number: ', confirmationNumber);
+                console.log('Transaction receipt: ', receipt);
+            })
+            .on('error', function (error) {
+                console.error(error);
+                createToast("签到失败!")
+                $('#checkInResult').text('签到失败: ' + error.message);
+            });
+        } catch (error) {
+            console.error(error);
+            createToast("签到失败!")
+            $('#checkInResult').text('签到失败: ' + error.message);
+        }
+    });
+
+    $("#tipAmount").blur(checkTipAmount);
+
+    async function checkTipAmount() {
+        if (!web3) {
+            return;
+        }
+        $('#tipButton').prop("disabled", true);
+        const tipAmount = $('#tipAmount').val();
+        const token = $('#tokenSelect').val();
+        const wallet = $('#userWalletAddress').text();
+        if (token === "ETH") {
+            $('#tipButton').prop("disabled", false);
+            return;
+        }
+
+        const tokenAddress = ERC20Maps[token];
+        const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, tokenAddress);
+        let decimals = await tokenContract.methods.decimals().call();
+        const eAmount = BigInt(toSmallestUnit(tipAmount, decimals));
+        const subAmount = await approved(tokenAddress, wallet, V3EXCheckInAddress, eAmount);
+        if (subAmount < BigInt(0)) {
+            // 授权金额不足, 需授权
+            $('#tipButton').text('授权');
+        } else {
+            $('#tipButton').text('打赏');
+        }
+        $('#tipButton').prop("disabled", false);
+    }
+
+    // 打赏功能
+    $('#tipForm').submit(async function (event) {
+        event.preventDefault();
+        if (!web3) {
+            createToast("请连接钱包!")
+            return null
+        }
+        const tipAddress = $('#tipAddress').val();
+        const tipAmount = $('#tipAmount').val();
+        const token = $('#tokenSelect').val();
+        const wallet = $('#userWalletAddress').text();
+
+        const checkInContract = new web3.eth.Contract(IV3EXCheckIn_ABI, V3EXCheckInAddress);
+        try {
+            let tx;
+            let amount;
+            if (token === "ETH" ) {
+                tx = checkInContract.methods.tipETH(tipAddress);
+                amount = web3.utils.toWei(tipAmount, 'ether');
+            } else {
+                const tokenAddress = ERC20Maps[token];
+                const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, tokenAddress);
+                let decimals = await tokenContract.methods.decimals().call();
+                const eAmount = BigInt(toSmallestUnit(tipAmount.toString(), decimals));
+                // 授权金额足额与否
+                const subAmount = await approved(tokenAddress, wallet, V3EXCheckInAddress, eAmount);
+                if (subAmount < BigInt(0)) {
+                    // 授权金额不足, 需授权
+                    await approve(V3EXTokenAddress, wallet, V3EXCheckInAddress, eAmount);
+                    return
+                }
+
+                tx = checkInContract.methods.tipERC20(tokenAddress, tipAddress, eAmount);
+            }
+            const gas = await tx.estimateGas({
+                from: wallet,
+                to: V3EXCheckInAddress,
+                value: amount});
+
+            tx.send({
+                from: wallet,
+                to: V3EXCheckInAddress,
+                value: amount,
+                gas
+            })
+                .on('transactionHash', function (hash) {
+                    $('#tipResult').text('打赏中..' + hash);
+                })
+                .on('receipt', async (receipt) => {
+                    console.log('Transaction receipt: ', receipt);
+                    createToast('打赏成功! 代币:' + token + ', 金额:' + tipAmount);
+                    $('#tipResult').text('');
+
+                    // 更新余额
+                    await updateBalance();
+                })
+                .on('confirmation', (confirmationNumber, receipt) => {
+                    console.log('Confirmation number: ', confirmationNumber);
+                    console.log('Transaction receipt: ', receipt);
+                })
+                .on('error', function (error) {
+                    console.error(error);
+                    createToast("打赏失败!")
+                    $('#tipResult').text('打赏失败: ' + error.message);
+                });
+        } catch (error) {
+            console.error(error);
+            createToast("打赏失败!")
+            $('#tipResult').text('打赏失败: ' + error.message);
+        }
+    });
+
+    async function approved(tokenAddress, owner, spender, amount) {
+        const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, tokenAddress);
+        const allowedAmount = await tokenContract.methods.allowance(owner, spender).call();
+        return allowedAmount - amount;
+    }
+
+    async function approve(tokenAddress, owner, spender, amount) {
+        const tokenContract = new web3.eth.Contract(IV3EXToken_ABI, tokenAddress);
+        const tx = tokenContract.methods.approve(spender, amount);
+        const gas = await tx.estimateGas({
+            from: owner
+        });
+        tx.send({
+            from: owner,
+            gas
+        })
+            .on('transactionHash', function (hash) {
+                $('#tipResult').text('授权中..' + hash);
+            })
+            .on('receipt', async (receipt) => {
+                console.log('Transaction receipt: ', receipt);
+                createToast('授权成功! 授权金额:' + amount);
+                $('#tipResult').text('');
+                // 再次检查金额状况
+                await checkTipAmount()
+                // 更新余额
+                await updateBalance();
+            })
+            .on('confirmation', (confirmationNumber, receipt) => {
+                console.log('Confirmation number: ', confirmationNumber);
+                console.log('Transaction receipt: ', receipt);
+            })
+            .on('error', function (error) {
+                console.error(error);
+                createToast("授权失败!")
+                $('#tipResult').text('授权失败: ' + error.message);
+            });
+    }
+
+    function createToast(message) {
+        const id = crypto.randomUUID();
+        // 创建一个新的 Toast 元素
+        const toast = `
+            <div id="${id}" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="true" data-delay="2000">
+                <div class="toast-header">
+                    <strong class="mr-auto">提示</strong>
+                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+        // 将 Toast 元素添加到页面中
+        $('#toastContainer').append(toast);
+
+        // 初始化 Toast
+        $(`#`+id).toast('show');
+        // 3秒后自动关闭
+        setTimeout(function() {
+          $('#' + toastId).remove();
+        }, 3000);
+    }
+
+    // 将代币数量转换为最小单位（例如，wei）
+    function toSmallestUnit(amount, decimals) {
+        return (Number(amount) * Number(10) ** Number(decimals)).toString()
+        // if (Number(amount) === 0) {
+        //     return "0"
+        // }
+        // decimals = parseInt(decimals.toString())
+        // const factor = Number(10) ** Number(decimals);
+        // const smallestUnit = Number(amount) * factor;
+        // return smallestUnit.toString();
+    }
+
+    // 将最小单位（例如，wei）转换为代币数量
+    function fromSmallestUnit(amount, decimals) {
+        return (Number(amount) / Number(10) ** Number(decimals)).toString()
+        // if (BigInt(amount) === BigInt("0")) {
+        //     return "0"
+        // }
+        // decimals = parseInt(decimals.toString())
+        // const factor = Web3.utils.toBigInt(10)** Web3.utils.toBigInt(decimals);
+        // const tokenAmount = Web3.utils.toBigInt(amount) / factor;
+        // const remainder = Web3.utils.toBigInt(amount) % factor;
+        //
+        // // 将结果格式化为字符串，保留小数位数
+        // const tokenAmountStr = tokenAmount.toString();
+        // const remainderStr = remainder.toString().padStart(decimals, '0');
+        //
+        // return `${tokenAmountStr}.${remainderStr}`.replace(/\.?0+$/, '');
+    }
+
+    function arraysAreEqual(arr1, arr2) {
+        // 首先比较数组长度
+        if (arr1.length !== arr2.length) {
+            return false;
+        }
+
+        // 比较每个元素是否相同
+        for (let i = 0; i < arr1.length; i++) {
+            if (arr1[i] !== arr2[i]) {
+                return false;
+            }
+        }
+
+        // 如果长度相同且所有元素都相同，则数组相等
+        return true;
+    }
+
+    const IV3EXToken_ABI = [
+        {
+            "type": "function",
+            "name": "allowance",
+            "inputs": [
+                {
+                    "name": "owner",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "spender",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "approve",
+            "inputs": [
+                {
+                    "name": "spender",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "balanceOf",
+            "inputs": [
+                {
+                    "name": "account",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "decimals",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint8",
+                    "internalType": "uint8"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "decreaseAllowance",
+            "inputs": [
+                {
+                    "name": "spender",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "subtractedValue",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "increaseAllowance",
+            "inputs": [
+                {
+                    "name": "spender",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "addedValue",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "inputs": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "symbol",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "mint",
+            "inputs": [
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "name",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "owner",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "pause",
+            "inputs": [],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "paused",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "proxiableUUID",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "renounceOwnership",
+            "inputs": [],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "symbol",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "totalSupply",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "transfer",
+            "inputs": [
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "transferFrom",
+            "inputs": [
+                {
+                    "name": "from",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "transferOwnership",
+            "inputs": [
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "unpause",
+            "inputs": [],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "upgradeTo",
+            "inputs": [
+                {
+                    "name": "newImplementation",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "upgradeToAndCall",
+            "inputs": [
+                {
+                    "name": "newImplementation",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "data",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "event",
+            "name": "AdminChanged",
+            "inputs": [
+                {
+                    "name": "previousAdmin",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newAdmin",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Approval",
+            "inputs": [
+                {
+                    "name": "owner",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "spender",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "value",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "BeaconUpgraded",
+            "inputs": [
+                {
+                    "name": "beacon",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "name": "version",
+                    "type": "uint8",
+                    "indexed": false,
+                    "internalType": "uint8"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "OwnershipTransferred",
+            "inputs": [
+                {
+                    "name": "previousOwner",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Paused",
+            "inputs": [
+                {
+                    "name": "account",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Transfer",
+            "inputs": [
+                {
+                    "name": "from",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "value",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Unpaused",
+            "inputs": [
+                {
+                    "name": "account",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Upgraded",
+            "inputs": [
+                {
+                    "name": "implementation",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        }
+    ];
+
+    const IV3EXCheckIn_ABI = [
+        {
+            "type": "receive",
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "MAX_FEE",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "VTOKEN",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "checkIn",
+            "inputs": [
+                {
+                    "name": "date",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "transId",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "signature",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "checkInStates",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "dates",
+                    "type": "uint256[]",
+                    "internalType": "uint256[]"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "states",
+                    "type": "bool[]",
+                    "internalType": "bool[]"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "collectedFees",
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "existsTransId",
+            "inputs": [
+                {
+                    "name": "transId",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "feePercentage",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getSigner",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "haveCheckedIn",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "date",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "inputs": [
+                {
+                    "name": "vtoken",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "verifySigner",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "tipFee",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "owner",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "paused",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "proxiableUUID",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "renounceOwnership",
+            "inputs": [],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "setFeePercentage",
+            "inputs": [
+                {
+                    "name": "newFeePercentage",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "setSigner",
+            "inputs": [
+                {
+                    "name": "addr",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "tipERC20",
+            "inputs": [
+                {
+                    "name": "tokenAddress",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "tipETH",
+            "inputs": [
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "toMessageHash",
+            "inputs": [
+                {
+                    "name": "chainId",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "code",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "transId",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "stateMutability": "pure"
+        },
+        {
+            "type": "function",
+            "name": "transferOwnership",
+            "inputs": [
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "upgradeTo",
+            "inputs": [
+                {
+                    "name": "newImplementation",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "upgradeToAndCall",
+            "inputs": [
+                {
+                    "name": "newImplementation",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "data",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "payable"
+        },
+        {
+            "type": "function",
+            "name": "verifySignature",
+            "inputs": [
+                {
+                    "name": "code",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "transId",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "signature",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool",
+                    "internalType": "bool"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "withdrawCollectedFees",
+            "inputs": [
+                {
+                    "name": "tokenAddress",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "withdrawStuckToken",
+            "inputs": [
+                {
+                    "name": "tokenAddress",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "event",
+            "name": "AdminChanged",
+            "inputs": [
+                {
+                    "name": "previousAdmin",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newAdmin",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "BeaconUpgraded",
+            "inputs": [
+                {
+                    "name": "beacon",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "FeeCollected",
+            "inputs": [
+                {
+                    "name": "tokenAddress",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "FeePercentageChanged",
+            "inputs": [
+                {
+                    "name": "oldFee",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "newFee",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "name": "version",
+                    "type": "uint8",
+                    "indexed": false,
+                    "internalType": "uint8"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "OwnershipTransferred",
+            "inputs": [
+                {
+                    "name": "previousOwner",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "newOwner",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Paused",
+            "inputs": [
+                {
+                    "name": "account",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "SignerUpdated",
+            "inputs": [
+                {
+                    "name": "signer",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "TipSent",
+            "inputs": [
+                {
+                    "name": "from",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "tokenAddress",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Unpaused",
+            "inputs": [
+                {
+                    "name": "account",
+                    "type": "address",
+                    "indexed": false,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "Upgraded",
+            "inputs": [
+                {
+                    "name": "implementation",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "UserCheckIn",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "date",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "event",
+            "name": "WithdrawFee",
+            "inputs": [
+                {
+                    "name": "tokenAddress",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address",
+                    "indexed": true,
+                    "internalType": "address"
+                },
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "indexed": false,
+                    "internalType": "uint256"
+                }
+            ],
+            "anonymous": false
+        },
+        {
+            "type": "error",
+            "name": "AlreadyCheckIn",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                },
+                {
+                    "name": "date",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "ExistsTransId",
+            "inputs": [
+                {
+                    "name": "transId",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "FailedToSendETH",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InsufficientBalance",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidAmount",
+            "inputs": [
+                {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidFeePercentage",
+            "inputs": [
+                {
+                    "name": "feePercentage",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidRecipientAddress",
+            "inputs": [
+                {
+                    "name": "ads",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidSignature",
+            "inputs": [
+                {
+                    "name": "signature",
+                    "type": "bytes",
+                    "internalType": "bytes"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidTokenAddress",
+            "inputs": [
+                {
+                    "name": "ads",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidUserAddress",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "TipTransferFailed",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "WithdrawFeeFailed",
+            "inputs": []
+        }
+    ];
+</script>
+</body>
+
+</html>

@@ -24,7 +24,7 @@ contract V3EXTokenTest is Test {
     function setUp() public {
         ownerPrivateKey = 0xaaaaaa;
         owner = vm.addr(ownerPrivateKey);
-        signerPrivateKey = 0xbbbbbb;
+        signerPrivateKey = 0x4651f9c219fc6401fe0b3f82129467c717012287ccb61950d2a8ede0687857ba;
         signer = vm.addr(signerPrivateKey);
         user1 = address(0x02);
         vm.startPrank(owner);
@@ -115,6 +115,42 @@ contract V3EXTokenTest is Test {
         }
     }
 
+    function test_xxx() public {
+        uint256 chainId = uint256(59141);
+        vm.chainId(chainId);
+        address to = address(0xc30bfe927d60fabA7D1b346E88720bd3c9492d1f);
+        uint256 date = uint256(20240625);
+        uint256 amount = uint256(123);
+        string memory transId = Strings.toHexString(uint256(getTransId(chainId, to, date)));
+        bytes memory signature = getSignature("CHECKIN", transId, amount, to);
+
+        console.log("transId:", transId);
+        console.log("signature:", iToHex(signature));
+    }
+
+     function iToHex(bytes memory buffer) public pure returns (string memory) {
+
+        // Fixed buffer size for hexadecimal convertion
+        bytes memory converted = new bytes(buffer.length * 2);
+
+        bytes memory _base = "0123456789abcdef";
+
+        for (uint256 i = 0; i < buffer.length; i++) {
+            converted[i * 2] = _base[uint8(buffer[i]) / _base.length];
+            converted[i * 2 + 1] = _base[uint8(buffer[i]) % _base.length];
+        }
+
+        return string(converted);
+    }
+
+    function getTransId(
+        uint256 chainId,
+        address to,
+        uint256 date
+    ) public pure returns(bytes32 transId) {
+        return keccak256(abi.encodePacked(chainId, to, date));
+    }
+
     function getSignature(
         string memory code, 
         string memory transId, 
@@ -123,6 +159,8 @@ contract V3EXTokenTest is Test {
         ) public view returns(bytes memory signature) {
         bytes32 hash = proxyV3EXCheckIn.toMessageHash(block.chainid, code, transId, amount, to);
         bytes32 digest = hash.toEthSignedMessageHash();
+        console.log("hash:", Strings.toHexString(uint256(hash)));
+        console.log("digest",Strings.toHexString(uint256(digest)));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPrivateKey, digest);
         signature = abi.encodePacked(r, s, v); // note the order here is different from line above.
         return signature;

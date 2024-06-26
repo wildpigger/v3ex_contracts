@@ -96,7 +96,7 @@ contract V3EXCheckIn is OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable
         _userCheckInEntries.set(_userDateKey(msg.sender, date));
         // send token to sender
         SafeERC20.safeTransfer(IERC20(VTOKEN), msg.sender, amount);
-        emit UserCheckIn(msg.sender, amount, block.timestamp);
+        emit UserCheckIn(msg.sender, date, amount);
     }
 
     function haveCheckedIn(address user, uint256 date) public view virtual returns (bool){
@@ -122,19 +122,19 @@ contract V3EXCheckIn is OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable
     // sign data
     function toMessageHash(
         uint256 chainId,
-        string memory code, 
-        string memory transId, 
-        uint256 amount, 
+        string memory code,
+        string memory transId,
+        uint256 amount,
         address to
         ) public pure virtual returns (bytes32) {
        return keccak256(abi.encodePacked(chainId, code, transId, amount, to));
     }
 
     function verifySignature(
-        string memory code, 
-        string memory transId, 
-        uint256 amount, 
-        address to, 
+        string memory code,
+        string memory transId,
+        uint256 amount,
+        address to,
         bytes memory signature
         ) public view virtual returns (bool){
         bytes32 hash = toMessageHash(block.chainid, code, transId, amount, to);
@@ -156,7 +156,7 @@ contract V3EXCheckIn is OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable
     /// tip
     function tipERC20(
         address tokenAddress,
-        address to, 
+        address to,
         uint256 amount
         ) external virtual whenNotPaused nonReentrant {
         if (tokenAddress == address(0)) {
@@ -173,7 +173,7 @@ contract V3EXCheckIn is OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable
         SafeERC20.safeTransferFrom(IERC20(tokenAddress), msg.sender, address(this), fee);
         SafeERC20.safeTransferFrom(IERC20(tokenAddress), msg.sender, to, netAmount);
 
-        emit TipSent(msg.sender, to, netAmount, tokenAddress);
+        emit TipSent(msg.sender, to, amount, tokenAddress);
         emit FeeCollected(tokenAddress, fee);
     }
 
@@ -193,7 +193,7 @@ contract V3EXCheckIn is OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable
             revert TipTransferFailed();
         }
 
-        emit TipSent(msg.sender, to, netAmount, address(0));
+        emit TipSent(msg.sender, to, msg.value, address(0));
         emit FeeCollected(address(0), fee);
     }
 
