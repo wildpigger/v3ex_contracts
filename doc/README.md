@@ -1,6 +1,4 @@
 # V3EX 合约集成文档
-## demo
-地址: https://wildpigger.github.io/v3ex_contracts/index.html
 
 ## linea sepolia rpc
 | 字段| 值|
