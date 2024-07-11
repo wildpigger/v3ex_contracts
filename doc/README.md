@@ -1,6 +1,8 @@
 # V3EX 合约集成文档
 
-## linea sepolia rpc
+## 网络
+### linea sepolia
+#### rpc
 | 字段| 值|
 | ------------ | ------------------------------------------------------------ |
 | 网络名称     | Linea Sepolia                                                |
@@ -9,12 +11,30 @@
 | 符号         | ETH                                                          |
 | 区块链浏览器 | https://sepolia.lineascan.build                              |
 
-## 相关合约地址
+#### 相关合约地址
 
 | 合约        | 地址 |
 | ----------- | ---- |
 | V3EXToken   |   0xE29FA1eda90338064A1C181fD9821734922B268e   |
 | V3EXCheckIn |   0xB25aF23E325cB921E21776e5f87FFed8E4133053   |
+
+### scroll sepolia
+#### rpc
+| 字段| 值|
+| ------------ | ------------------------------------------------------------ |
+| 网络名称     | Scroll Sepolia                                                |
+| RPC URL      | https://sepolia-rpc.scroll.io/ |
+| 链ID         | 534351                                                        |
+| 符号         | ETH                                                          |
+| 区块链浏览器 | https://sepolia.scrollscan.com                              |
+
+#### 相关合约地址
+
+| 合约        | 地址 |
+| ----------- | ---- |
+| V3EXToken   |   0xc4605BFBdFc7963b64230C439B93D73881Edf5A9   |
+| V3EXCheckIn |   0x255B4E90974C6488c65E8311A48F565e90c1F65b   |
+
 
 ## 合约接口文档
 [IV3EXToken接口文档](./IV3EXToken接口文档.md)

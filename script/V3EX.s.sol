@@ -31,7 +31,9 @@ contract V3EXDeploy is Script {
         V3EXToken(proxyV3EXToken).mint(proxyV3EXCheckIn, initV3EXCheckInBalance);
         V3EXToken(proxyV3EXToken).mint(deployer, initOwnerBalance);
         vm.stopBroadcast();
+        console.log("V3EXToken: ", address(vt));
         console.log("proxyV3EXToken: ", proxyV3EXToken);
+        console.log("V3EXCheckIn: ", address(vc));
         console.log("proxyV3EXCheckIn: ", proxyV3EXCheckIn);
     }
 }
